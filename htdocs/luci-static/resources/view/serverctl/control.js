@@ -32,7 +32,6 @@ return view.extend({
 		]);
 
 		servers.forEach(function(srv) {
-			// 下拉框的 value 和显示文本都直接使用用户设定的名称 srv.name
 			serverSelect.appendChild(E('option', { value: srv.name }, srv.name + ' (' + srv.ip + ')'));
 		});
 
@@ -63,7 +62,8 @@ return view.extend({
 			};
 		};
 
-		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px;' }, [
+		// 修改此处：增加 text-align: right; 让五个按钮整体向右对齐
+		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; text-align: right;' }, [
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping 测试')), ' ',
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH 测试')), ' ',
 			E('button', { 'class': 'btn cbi-button-apply', 'click': btnAction('wake') }, _('唤醒 (WOL)')), ' ',
@@ -110,7 +110,6 @@ return view.extend({
 		o.rmempty = false;
 		o.default = '1';
 
-		// 定时任务的下拉列表同样绑定服务器的名称（srv.name）
 		o = s.option(form.ListValue, 'server', _('目标服务器'));
 		if (servers.length === 0) {
 			o.value('', _('未配置服务器 (请前往服务器信息标签页添加)'));
