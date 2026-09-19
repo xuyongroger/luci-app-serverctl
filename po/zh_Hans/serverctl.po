@@ -1,22 +1,116 @@
 msgid ""
 msgstr ""
+"Project-Id-Version: luci-app-serverctl\n"
+"POT-Creation-Date: 2026-09-19 12:00+0800\n"
+"PO-Revision-Date: 2026-09-19 12:00+0800\n"
+"Last-Translator: Auto\n"
+"Language-Team: Chinese\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "Server Control"
 msgstr "服务器控制"
 
-msgid "Manual & Scheduled Control"
-msgstr "手动与定时控制"
+msgid "Manual Control"
+msgstr "手动控制"
 
 msgid "Server Information"
 msgstr "服务器信息"
 
-msgid "Manual Control"
-msgstr "手动控制"
+msgid "Instantly control computers, servers and other devices in the LAN, or set unattended scheduled wake and shutdown strategies."
+msgstr "即时控制局域网内的计算机、服务器等设备，或设立无人值守定时唤醒及关机策略。"
 
-msgid "Scheduled Tasks"
-msgstr "定时任务"
+msgid "Maintain and manage your LAN server list here. After saving, it can be selected in the control panel dropdown and scheduled task modals."
+msgstr "在此处维护和管理您的局域网服务器清单。保存后即可在控制面板的下拉列表和定时任务弹窗中选用。"
+
+msgid "-- Please select a server --"
+msgstr "-- 请选择操作的服务器 --"
 
 msgid "Select Server"
 msgstr "选择服务器"
+
+msgid "Ping Test"
+msgstr "Ping 测试"
+
+msgid "SSH Test"
+msgstr "SSH 测试"
+
+msgid "Wake (WOL)"
+msgstr "唤醒 (WOL)"
+
+msgid "Sleep"
+msgstr "休眠"
+
+msgid "Power Off"
+msgstr "关机"
+
+msgid "Name:"
+msgstr "名称:"
+
+msgid "IP:"
+msgstr "IP:"
+
+msgid "MAC:"
+msgstr "MAC:"
+
+msgid "User:"
+msgstr "用户:"
+
+msgid "Scheduled Tasks Section"
+msgstr "定时任务区"
+
+msgid "Edit Scheduled Task"
+msgstr "编辑定时任务"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Target Server"
+msgstr "目标服务器"
+
+msgid "No server configured (Please add in Server Information tab)"
+msgstr "未配置服务器 (请前往服务器信息标签页添加)"
+
+msgid "Action"
+msgstr "执行动作"
+
+msgid "Hour"
+msgstr "小时"
+
+msgid "Minute"
+msgstr "分钟"
+
+msgid "Please select a server from the list first."
+msgstr "请先从下拉列表选择一台服务器。"
+
+msgid "Executing"
+msgstr "正在执行"
+
+msgid "Sending command, please wait..."
+msgstr "指令发送中，请稍候..."
+
+msgid "Operation failed"
+msgstr "操作失败"
+
+msgid "System request error: "
+msgstr "系统请求异常: "
+
+msgid "Server List"
+msgstr "服务器列表"
+
+msgid "Server Alias"
+msgstr "服务器别名"
+
+msgid "IP Address"
+msgstr "IP 地址"
+
+msgid "MAC Address"
+msgstr "MAC 地址"
+
+msgid "SSH Username"
+msgstr "SSH 用户名"
+
+msgid "SSH Password"
+msgstr "SSH 密码"
