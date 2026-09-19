@@ -10,7 +10,7 @@ msgid "Manual & Scheduled Control"
 msgstr "手动与定时控制"
 
 msgid "Server Information"
-msgstr "服务器信息"
+msgstr "服务器维护"
 
 msgid "Manual Control"
 msgstr "手动控制"
