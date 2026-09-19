@@ -10,19 +10,5 @@ PKGARCH:=all
 
 include $(TOPDIR)/feeds/luci/luci.mk
 
-# 定义中文语言包子包，符合官方标准
-define Package/luci-i18n-serverctl-zh-cn
-  SECTION:=luci
-  CATEGORY:=LuCI
-  SUBMENU:=3. Applications
-  TITLE:=Translation for Server Control in Chinese (Simplified)
-  DEFAULT:=($(CONFIG_PACKAGE_luci-app-serverctl) && nls)
-  PKGARCH:=all
-endef
-
-define Package/luci-i18n-serverctl-zh-cn/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/i18n
-	po2lmo po/zh_Hans/serverctl.po $(1)/usr/lib/lua/luci/i18n/serverctl.zh-cn.lmo
-endef
-
-$(eval $(call BuildPackage,luci-i18n-serverctl-zh-cn))
+# 仅需声明主包，luci.mk 会自动扫描 po/ 目录生成对应的 i18n 语言包
+$(eval $(call BuildPackage,luci-app-serverctl))
