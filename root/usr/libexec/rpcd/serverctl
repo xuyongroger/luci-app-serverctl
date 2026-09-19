@@ -1,6 +1,4 @@
 #!/bin/sh
-# 严格遵循 procd/ubus 标准接口规范
-
 . /usr/share/libubox/jshn.sh
 
 case "$1" in
@@ -11,19 +9,32 @@ case "$1" in
 	call)
 		read -r input
 		json_load "$input"
-		json_get_var server "server"
+		json_get_var target_name "server"
 		json_get_var action "action"
 
-		# 从 UCI 自动读取在第二个选项卡配置的服务器信息
-		ip=$(uci -q get serverctl."$server".ip)
-		mac=$(uci -q get serverctl."$server".mac)
-		user=$(uci -q get serverctl."$server".user)
-		pass=$(uci -q get serverctl."$server".password)
+		# 通过匹配服务器名称（name字段）查找对应的配置区块
+		find_server_config() {
+			local cfg="$1"
+			local name
+			config_get name "$cfg" name ""
+			if [ "$name" = "$target_name" ]; then
+				found_cfg="$cfg"
+			fi
+		}
 
-		if [ -z "$ip" ]; then
-			echo '{"code":1, "msg":"未找到服务器配置"}'
+		config_load serverctl
+		found_cfg=""
+		config_foreach find_server_config server
+
+		if [ -z "$found_cfg" ]; then
+			echo '{"code":1, "msg":"未找到对应的服务器配置"}'
 			exit 0
 		fi
+
+		ip=$(uci -q get serverctl."$found_cfg".ip)
+		mac=$(uci -q get serverctl."$found_cfg".mac)
+		user=$(uci -q get serverctl."$found_cfg".user)
+		pass=$(uci -q get serverctl."$found_cfg".password)
 
 		case "$action" in
 			ping)
@@ -48,7 +59,6 @@ case "$1" in
 				fi
 				;;
 			sleep)
-				# 挂起命令后加 & 脱离控制台，防止因连接立刻断开导致 LuCI 前端卡死等待
 				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$user@$ip" "nohup systemctl suspend >/dev/null 2>&1 &" >/dev/null 2>&1; then
 					echo '{"code":0, "msg":"系统休眠指令已送达"}'
 				else
