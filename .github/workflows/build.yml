@@ -31,6 +31,11 @@ jobs:
           mkdir sdk
           tar -I zstd -xf sdk.tar.zst -C sdk --strip-components=1
 
+      - name: Fix script permissions
+        run: |
+          chmod +x luci-app-serverctl/root/etc/init.d/serverctl
+          chmod +x luci-app-serverctl/root/usr/libexec/rpcd/serverctl
+
       - name: Prepare Feeds & Environment
         run: |
           cd sdk
