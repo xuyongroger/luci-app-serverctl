@@ -64,7 +64,7 @@ do_execute() {
 		return
 	fi
 
-	# 提炼通用 SSH 参数
+	# 提炼通用 SSH 极速与稳定参数（同步等待发送完毕，不使用后台 & 异步）
 	local ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=3 -o BatchMode=no"
 
 	case "$action" in
@@ -91,13 +91,14 @@ do_execute() {
 			fi
 			;;
 		sleep)
-			local cmd="systemctl suspend"
+			# 针对 Ubuntu s2idle 状态使用 -i (--ignore-inhibitors) 忽略 SSH 会话锁强行挂起
+			local cmd="systemctl suspend -i"
 			if [ -n "$TARGET_PASS" ] && command -v sshpass >/dev/null 2>&1; then
 				sshpass -p "$TARGET_PASS" ssh $ssh_opts "${TARGET_USER}@${TARGET_IP}" "$cmd" >/dev/null 2>&1
 			else
 				ssh $ssh_opts "${TARGET_USER}@${TARGET_IP}" "$cmd" >/dev/null 2>&1
 			fi
-			echo '{"code": 0, "msg": "休眠指令已成功发送！"}'
+			echo '{"code": 0, "msg": "休眠/挂起指令已成功发送！"}'
 			;;
 		poweroff)
 			local cmd="poweroff"
