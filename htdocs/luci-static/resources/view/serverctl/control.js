@@ -1,0 +1,150 @@
+'use strict';
+'require view';
+'require form';
+'require uci';
+'require rpc';
+'require ui';
+'require dom';
+
+var callAction = rpc.declare({
+	object: 'serverctl',
+	method: 'execute',
+	params: [ 'server', 'action' ],
+	expect: { '': {} }
+});
+
+return view.extend({
+	load: function() {
+		// 提前读取配置文件，以便填充下拉列表
+		return uci.load('serverctl');
+	},
+
+	render: function(data) {
+		var m, s, o;
+		var servers = uci.sections('serverctl', 'server');
+
+		// ========== 手动控制区 ==========
+		var serverSelect = E('select', { 'class': 'cbi-input-select' }, [
+			E('option', { value: '' }, _('-- 请选择操作的服务器 --'))
+		]);
+
+		var serverInfo = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; display: none;' }, [
+			E('div', { 'id': 'srv_info_display', 'style': 'padding: 10px; background: var(--background-alt); border-radius: 4px;' })
+		]);
+
+		servers.forEach(function(srv) {
+			serverSelect.appendChild(E('option', { value: srv['.name'] }, srv.name + ' (' + srv.ip + ')'));
+		});
+
+		var btnAction = function(action) {
+			return function(ev) {
+				var sid = serverSelect.value;
+				if (!sid) {
+					ui.addNotification(null, E('p', _('请先从下拉列表选择一台服务器。')), 'warning');
+					return;
+				}
+				var btn = ev.target;
+				btn.disabled = true;
+				ui.showModal(_('正在执行'), [ E('p', { class: 'spinning' }, _('指令发送中，请稍候...')) ]);
+
+				callAction(sid, action).then(function(res) {
+					ui.hideModal();
+					if (res && res.code === 0) {
+						ui.addNotification(null, E('p', res.msg), 'info');
+					} else {
+						ui.addNotification(null, E('p', (res && res.msg) ? res.msg : _('操作失败')), 'error');
+					}
+				}).catch(function(e) {
+					ui.hideModal();
+					ui.addNotification(null, E('p', _('系统请求异常: ') + e.message), 'error');
+				}).finally(function() {
+					btn.disabled = false;
+				});
+			};
+		};
+
+		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px;' }, [
+			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping 测试')), ' ',
+			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH 测试')), ' ',
+			E('button', { 'class': 'btn cbi-button-apply', 'click': btnAction('wake') }, _('唤醒 (WOL)')), ' ',
+			E('button', { 'class': 'btn cbi-button-reset', 'click': btnAction('sleep') }, _('休眠')), ' ',
+			E('button', { 'class': 'btn cbi-button-negative', 'click': btnAction('poweroff') }, _('关机'))
+		]);
+
+		serverSelect.addEventListener('change', function(ev) {
+			var sid = ev.target.value;
+			if (!sid) {
+				serverInfo.style.display = 'none';
+				return;
+			}
+			var s = servers.filter(function(x) { return x['.name'] === sid; })[0];
+			if (s) {
+				document.getElementById('srv_info_display').innerHTML = 
+					'<strong>' + _('名称:') + '</strong> ' + s.name + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+					'<strong>' + _('IP:') + '</strong> ' + s.ip + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+					'<strong>' + _('MAC:') + '</strong> ' + s.mac + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+					'<strong>' + _('用户:') + '</strong> ' + s.user;
+				serverInfo.style.display = 'block';
+			}
+		});
+
+		var manualControlDom = E('fieldset', { 'class': 'cbi-section' }, [
+			E('legend', _('手动控制区')),
+			E('div', { 'class': 'cbi-value' }, [
+				E('label', { 'class': 'cbi-value-title' }, _('选择服务器')),
+				E('div', { 'class': 'cbi-value-field' }, [ serverSelect ])
+			]),
+			serverInfo,
+			actionButtons
+		]);
+
+		// ========== 定时任务区 ==========
+		m = new form.Map('serverctl');
+
+		s = m.section(form.GridSection, 'task', _('定时任务区'));
+		s.addremove = true;
+		s.anonymous = true;
+		s.modaltitle = function(section_id) { return _('编辑定时任务'); };
+
+		o = s.option(form.Flag, 'enabled', _('启用'));
+		o.rmempty = false;
+		o.default = '1';
+
+		o = s.option(form.ListValue, 'server', _('目标服务器'));
+		if (servers.length === 0) {
+			o.value('', _('未配置服务器 (请前往选项卡2添加)'));
+		} else {
+			servers.forEach(function(srv) {
+				o.value(srv['.name'], srv.name);
+			});
+		}
+		o.rmempty = false;
+
+		o = s.option(form.ListValue, 'action', _('执行动作'));
+		o.value('wake', _('唤醒 (WOL)'));
+		o.value('sleep', _('休眠'));
+		o.value('poweroff', _('关机'));
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'hour', _('小时'));
+		o.datatype = 'range(0,23)';
+		o.default = '8';
+		o.rmempty = false;
+		o.description = _('0 - 23');
+
+		o = s.option(form.Value, 'min', _('分钟'));
+		o.datatype = 'range(0,59)';
+		o.default = '30';
+		o.rmempty = false;
+		o.description = _('0 - 59');
+
+		return m.render().then(function(mapNode) {
+			return E('div', [
+				E('h2', { 'class': 'cbi-map-title' }, _('手动控制与定时任务')),
+				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内挂载 Ubuntu26.04 的软路由及设备，或设立无人值守定时唤醒及关机策略。')),
+				manualControlDom,
+				mapNode
+			]);
+		});
+	}
+});

@@ -1,0 +1,15 @@
+{
+	"luci-app-serverctl": {
+		"description": "Grant access to Server Control",
+		"read": {
+			"uci": [ "serverctl" ],
+			"ubus": { "serverctl": [ "execute" ] }
+		},
+		"write": {
+			"uci": [ "serverctl" ],
+			"file": {
+				"/etc/init.d/serverctl": [ "exec" ]
+			}
+		}
+	}
+}

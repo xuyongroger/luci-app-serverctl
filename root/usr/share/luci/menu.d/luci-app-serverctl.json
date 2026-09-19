@@ -1,0 +1,28 @@
+{
+	"admin/services/serverctl": {
+		"title": "服务器控制",
+		"order": 90,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-serverctl" ]
+		}
+	},
+	"admin/services/serverctl/control": {
+		"title": "手动控制与定时",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "serverctl/control"
+		}
+	},
+	"admin/services/serverctl/servers": {
+		"title": "服务器信息表",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "serverctl/servers"
+		}
+	}
+}

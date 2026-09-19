@@ -1,0 +1,71 @@
+#!/bin/sh
+# 严格遵循 procd/ubus 标准接口规范
+
+. /usr/share/libubox/jshn.sh
+
+case "$1" in
+	list)
+		echo '{"execute": {"server": "String", "action": "String"}}'
+		exit 0
+		;;
+	call)
+		read -r input
+		json_load "$input"
+		json_get_var server "server"
+		json_get_var action "action"
+
+		# 从 UCI 自动读取在第二个选项卡配置的服务器信息
+		ip=$(uci -q get serverctl."$server".ip)
+		mac=$(uci -q get serverctl."$server".mac)
+		user=$(uci -q get serverctl."$server".user)
+		pass=$(uci -q get serverctl."$server".password)
+
+		if [ -z "$ip" ]; then
+			echo '{"code":1, "msg":"未找到服务器配置"}'
+			exit 0
+		fi
+
+		case "$action" in
+			ping)
+				if ping -c 1 -W 2 "$ip" >/dev/null 2>&1; then
+					echo '{"code":0, "msg":"Ping 成功"}'
+				else
+					echo '{"code":1, "msg":"Ping 失败，服务器可能离线"}'
+				fi
+				;;
+			sshtest)
+				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 "$user@$ip" exit >/dev/null 2>&1; then
+					echo '{"code":0, "msg":"SSH 认证及连接成功"}'
+				else
+					echo '{"code":1, "msg":"SSH 连接失败，请检查密码或状态"}'
+				fi
+				;;
+			wake)
+				if etherwake -b "$mac" >/dev/null 2>&1; then
+					echo '{"code":0, "msg":"WOL 魔术包已发送至 '"$mac"'"}'
+				else
+					echo '{"code":1, "msg":"WOL 唤醒指令发送失败"}'
+				fi
+				;;
+			sleep)
+				# 挂起命令后加 & 脱离控制台，防止因连接立刻断开导致 LuCI 前端卡死等待
+				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$user@$ip" "nohup systemctl suspend >/dev/null 2>&1 &" >/dev/null 2>&1; then
+					echo '{"code":0, "msg":"系统休眠指令已送达"}'
+				else
+					echo '{"code":1, "msg":"休眠指令执行失败"}'
+				fi
+				;;
+			poweroff)
+				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$user@$ip" "nohup poweroff >/dev/null 2>&1 &" >/dev/null 2>&1; then
+					echo '{"code":0, "msg":"系统关机指令已送达"}'
+				else
+					echo '{"code":1, "msg":"关机指令执行失败"}'
+				fi
+				;;
+			*)
+				echo '{"code":1, "msg":"无效操作"}'
+				;;
+		esac
+		exit 0
+		;;
+esac
