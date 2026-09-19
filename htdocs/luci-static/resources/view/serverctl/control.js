@@ -88,7 +88,6 @@ return view.extend({
 			}
 		});
 
-		// 区域标题改为“手动控制”，并保持紧凑居中
 		var manualControlDom = E('fieldset', { 'class': 'cbi-section' }, [
 			E('legend', _('手动控制')),
 			E('div', { 'class': 'cbi-value', 'style': 'text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px;' }, [
@@ -141,7 +140,8 @@ return view.extend({
 
 		return m.render().then(function(mapNode) {
 			return E('div', [
-				E('h2', { 'class': 'cbi-map-title' }, _('手动与定时控制')),
+				// 将页面大标题修改为“手动控制”
+				E('h2', { 'class': 'cbi-map-title' }, _('手动控制')),
 				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内的计算机、服务器等设备，或设立无人值守定时唤醒及关机策略。')),
 				manualControlDom,
 				mapNode
