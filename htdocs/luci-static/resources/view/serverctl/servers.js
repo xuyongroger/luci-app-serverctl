@@ -6,7 +6,7 @@ return view.extend({
 	render: function() {
 		var m, s, o;
 
-		m = new form.Map('serverctl', _('服务器信息'), _('在此处管理您的局域网服务器清单。保存后即可在控制面板的下拉列表和定时任务弹窗中选用。'));
+		m = new form.Map('serverctl', _('服务器维护'), _('在此处维护和管理您的局域网服务器清单。保存后即可在控制面板的下拉列表和定时任务弹窗中选用。'));
 
 		s = m.section(form.GridSection, 'server', _('服务器列表'));
 		s.addremove = true;
