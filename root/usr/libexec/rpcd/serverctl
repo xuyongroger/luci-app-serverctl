@@ -6,17 +6,18 @@ check_and_get_server() {
 	local target="$1"
 	local found=0
 
-	# 尝试直接读取节点
-	local ip mac user
+	# 1. 优先尝试按 UCI 节点 ID 直接读取
+	local ip mac user pass
 	ip=$(uci -q get serverctl."$target".ip)
 	if [ -n "$ip" ]; then
 		TARGET_IP="$ip"
 		TARGET_MAC=$(uci -q get serverctl."$target".mac)
 		TARGET_USER=$(uci -q get serverctl."$target".user)
+		TARGET_PASS=$(uci -q get serverctl."$target".password)
 		return 0
 	fi
 
-	# 若非直接节点名，则按 option name 遍历查找
+	# 2. 若未获取到，则按 option name 遍历查找
 	cb_check() {
 		local section="$1"
 		local name
@@ -25,6 +26,7 @@ check_and_get_server() {
 			config_get TARGET_IP "$section" ip
 			config_get TARGET_MAC "$section" mac
 			config_get TARGET_USER "$section" user
+			config_get TARGET_PASS "$section" password
 			found=1
 		fi
 	}
@@ -32,6 +34,25 @@ check_and_get_server() {
 	config_load serverctl
 	config_foreach cb_check server
 	[ $found -eq 1 ] && return 0 || return 1
+}
+
+# 优化后的 TCP 22 端口检测函数
+test_ssh_port() {
+	local ip="$1"
+	local port=22
+
+	# 方法 1：使用 Bash/ASH 内置的 /dev/tcp 进行原生 TCP 握手检测
+	timeout 2 sh -c "exec 3<>/dev/tcp/$ip/$port" 2>/dev/null
+	if [ $? -eq 0 ]; then
+		return 0
+	fi
+
+	# 方法 2：兼容性回退使用 nc 测试
+	if nc -z -w 3 "$ip" "$port" 2>/dev/null; then
+		return 0
+	fi
+
+	return 1
 }
 
 do_execute() {
@@ -59,10 +80,10 @@ do_execute() {
 			fi
 			;;
 		sshtest)
-			if nc -z -w 2 "$TARGET_IP" 22 >/dev/null 2>&1; then
+			if test_ssh_port "$TARGET_IP"; then
 				echo '{"code": 0, "msg": "SSH 22 端口连通正常！"}'
 			else
-				echo '{"code": 1, "msg": "无法连接到 SSH 22 端口！"}'
+				echo '{"code": 1, "msg": "无法连接到 SSH 22 端口，请检查服务器 SSH 服务或防火墙！"}'
 			fi
 			;;
 		wake)
@@ -73,8 +94,21 @@ do_execute() {
 				echo '{"code": 1, "msg": "未配置 MAC 地址，无法发送唤醒包！"}'
 			fi
 			;;
-		sleep|poweroff)
-			echo '{"code": 0, "msg": "指令已发送！"}'
+		sleep)
+			if [ -n "$TARGET_PASS" ] && command -v sshpass >/dev/null 2>&1; then
+				sshpass -p "$TARGET_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 "${TARGET_USER}@${TARGET_IP}" "sudo systemctl suspend" >/dev/null 2>&1 &
+			else
+				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 "${TARGET_USER}@${TARGET_IP}" "sudo systemctl suspend" >/dev/null 2>&1 &
+			fi
+			echo '{"code": 0, "msg": "休眠指令已发送！"}'
+			;;
+		poweroff)
+			if [ -n "$TARGET_PASS" ] && command -v sshpass >/dev/null 2>&1; then
+				sshpass -p "$TARGET_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 "${TARGET_USER}@${TARGET_IP}" "sudo poweroff" >/dev/null 2>&1 &
+			else
+				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 "${TARGET_USER}@${TARGET_IP}" "sudo poweroff" >/dev/null 2>&1 &
+			fi
+			echo '{"code": 0, "msg": "关机指令已发送！"}'
 			;;
 		*)
 			echo '{"code": 1, "msg": "未知操作类型"}'
