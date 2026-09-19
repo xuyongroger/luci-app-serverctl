@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build IPK Package
+    name: Build IPK Packages
     runs-on: ubuntu-24.04
 
     steps:
@@ -50,6 +50,7 @@ jobs:
           cd sdk
           make defconfig
           echo "CONFIG_PACKAGE_luci-app-serverctl=m" >> .config
+          echo "CONFIG_PACKAGE_luci-i18n-serverctl-zh-cn=m" >> .config
           make defconfig
           
           make package/luci-app-serverctl/compile V=s
@@ -58,4 +59,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: luci-app-serverctl-ipk
-          path: sdk/bin/packages/*/base/luci-app-serverctl_*.ipk
+          path: |
+            sdk/bin/packages/*/base/luci-app-serverctl_*.ipk
+            sdk/bin/packages/*/base/luci-i18n-serverctl-zh-cn_*.ipk
