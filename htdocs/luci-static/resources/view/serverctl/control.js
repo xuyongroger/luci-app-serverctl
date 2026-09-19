@@ -22,7 +22,6 @@ return view.extend({
 		var m, s, o;
 		var servers = uci.sections('serverctl', 'server');
 
-		// 手动控制区：使用 inline-flex 配合 gap 紧凑挨在一起，并整体居中
 		var serverSelect = E('select', { 'class': 'cbi-input-select' }, [
 			E('option', { value: '' }, _('-- 请选择操作的服务器 --'))
 		]);
@@ -31,14 +30,15 @@ return view.extend({
 			E('div', { 'id': 'srv_info_display', 'style': 'padding: 10px; background: var(--background-alt); border-radius: 4px; text-align: center;' })
 		]);
 
+		// 【修复点 1】：将 option 的 value 改为真实的底层节点 ID：srv['.name']
 		servers.forEach(function(srv) {
-			serverSelect.appendChild(E('option', { value: srv.name }, srv.name + ' (' + srv.ip + ')'));
+			serverSelect.appendChild(E('option', { value: srv['.name'] }, srv.name + ' (' + srv.ip + ')'));
 		});
 
 		var btnAction = function(action) {
 			return function(ev) {
-				var sname = serverSelect.value;
-				if (!sname) {
+				var sid = serverSelect.value;
+				if (!sid) {
 					ui.addNotification(null, E('p', _('请先从下拉列表选择一台服务器。')), 'warning');
 					return;
 				}
@@ -46,7 +46,8 @@ return view.extend({
 				btn.disabled = true;
 				ui.showModal(_('正在执行'), [ E('p', { class: 'spinning' }, _('指令发送中，请稍候...')) ]);
 
-				callAction(sname, action).then(function(res) {
+				// 这里传给后端的 sid 就是 cfg0xxxxx 这种节点 ID，后端脚本可以直接获取
+				callAction(sid, action).then(function(res) {
 					ui.hideModal();
 					if (res && res.code === 0) {
 						ui.addNotification(null, E('p', res.msg), 'info');
@@ -62,7 +63,6 @@ return view.extend({
 			};
 		};
 
-		// 按钮容器居中对齐
 		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; text-align: center;' }, [
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping 测试')), ' ',
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH 测试')), ' ',
@@ -72,12 +72,13 @@ return view.extend({
 		]);
 
 		serverSelect.addEventListener('change', function(ev) {
-			var sname = ev.target.value;
-			if (!sname) {
+			var sid = ev.target.value;
+			if (!sid) {
 				serverInfo.style.display = 'none';
 				return;
 			}
-			var s = servers.filter(function(x) { return x.name === sname; })[0];
+			// 【修复点 2】：依据节点 ID（x['.name']）进行筛选以显示对应信息
+			var s = servers.filter(function(x) { return x['.name'] === sid; })[0];
 			if (s) {
 				document.getElementById('srv_info_display').innerHTML = 
 					'<strong>' + _('名称:') + '</strong> ' + s.name + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
@@ -115,7 +116,8 @@ return view.extend({
 			o.value('', _('未配置服务器 (请前往服务器信息标签页添加)'));
 		} else {
 			servers.forEach(function(srv) {
-				o.value(srv.name, srv.name);
+				// 【修复点 3】：让定时任务底层也保存节点 ID
+				o.value(srv['.name'], srv.name);
 			});
 		}
 		o.rmempty = false;
@@ -140,7 +142,6 @@ return view.extend({
 
 		return m.render().then(function(mapNode) {
 			return E('div', [
-				// 将页面大标题修改为“手动控制”
 				E('h2', { 'class': 'cbi-map-title' }, _('手动控制')),
 				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内的计算机、服务器等设备，或设立无人值守定时唤醒及关机策略。')),
 				manualControlDom,
