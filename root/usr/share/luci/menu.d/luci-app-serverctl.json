@@ -18,7 +18,7 @@
 		}
 	},
 	"admin/services/serverctl/servers": {
-		"title": "服务器信息",
+		"title": "服务器维护",
 		"order": 2,
 		"action": {
 			"type": "view",
