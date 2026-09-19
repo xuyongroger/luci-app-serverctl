@@ -88,7 +88,7 @@ return view.extend({
 			}
 		});
 
-		// 核心改动：legend 改为“手动控制”，并用 gap: 10px 让文字与下拉框紧挨在一起居中
+		// 区域标题改为“手动控制”，并保持紧凑居中
 		var manualControlDom = E('fieldset', { 'class': 'cbi-section' }, [
 			E('legend', _('手动控制')),
 			E('div', { 'class': 'cbi-value', 'style': 'text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px;' }, [
@@ -113,7 +113,7 @@ return view.extend({
 
 		o = s.option(form.ListValue, 'server', _('目标服务器'));
 		if (servers.length === 0) {
-			o.value('', _('未配置服务器 (请前往服务器维护标签页添加)'));
+			o.value('', _('未配置服务器 (请前往服务器信息标签页添加)'));
 		} else {
 			servers.forEach(function(srv) {
 				o.value(srv.name, srv.name);
@@ -142,7 +142,7 @@ return view.extend({
 		return m.render().then(function(mapNode) {
 			return E('div', [
 				E('h2', { 'class': 'cbi-map-title' }, _('手动与定时控制')),
-				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内挂载 Ubuntu26.04 的软路由及设备，或设立无人值守定时唤醒及关机策略。')),
+				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内的计算机、服务器等设备，或设立无人值守定时唤醒及关机策略。')),
 				manualControlDom,
 				mapNode
 			]);
