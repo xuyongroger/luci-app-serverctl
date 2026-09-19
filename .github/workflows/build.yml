@@ -50,7 +50,6 @@ jobs:
           cd sdk
           make defconfig
           echo "CONFIG_PACKAGE_luci-app-serverctl=m" >> .config
-          echo "CONFIG_PACKAGE_luci-i18n-serverctl-zh-cn=m" >> .config
           make defconfig
           
           make package/luci-app-serverctl/compile V=s
