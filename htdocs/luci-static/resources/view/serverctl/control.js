@@ -27,8 +27,8 @@ return view.extend({
 			E('option', { value: '' }, _('-- 请选择操作的服务器 --'))
 		]);
 
-		var serverInfo = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; display: none;' }, [
-			E('div', { 'id': 'srv_info_display', 'style': 'padding: 10px; background: var(--background-alt); border-radius: 4px;' })
+		var serverInfo = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; display: none; justify-content: center;' }, [
+			E('div', { 'id': 'srv_info_display', 'style': 'padding: 10px; background: var(--background-alt); border-radius: 4px; text-align: center;' })
 		]);
 
 		servers.forEach(function(srv) {
@@ -62,8 +62,8 @@ return view.extend({
 			};
 		};
 
-		// 修改此处：增加 text-align: right; 让五个按钮整体向右对齐
-		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; text-align: right;' }, [
+		// 按钮容器改为居中对齐 (text-align: center;)
+		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; text-align: center;' }, [
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping 测试')), ' ',
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH 测试')), ' ',
 			E('button', { 'class': 'btn cbi-button-apply', 'click': btnAction('wake') }, _('唤醒 (WOL)')), ' ',
@@ -88,11 +88,12 @@ return view.extend({
 			}
 		});
 
+		// “选择服务器”及下拉列表行改为居中对齐
 		var manualControlDom = E('fieldset', { 'class': 'cbi-section' }, [
-			E('legend', _('手动控制区')),
-			E('div', { 'class': 'cbi-value' }, [
-				E('label', { 'class': 'cbi-value-title' }, _('选择服务器')),
-				E('div', { 'class': 'cbi-value-field' }, [ serverSelect ])
+			E('legend', _('手动控制')),
+			E('div', { 'class': 'cbi-value', 'style': 'text-align: center; display: block;' }, [
+				E('label', { 'class': 'cbi-value-title', 'style': 'display: inline-block; margin-right: 10px;' }, _('选择服务器')),
+				E('div', { 'class': 'cbi-value-field', 'style': 'display: inline-block;' }, [ serverSelect ])
 			]),
 			serverInfo,
 			actionButtons
@@ -112,7 +113,7 @@ return view.extend({
 
 		o = s.option(form.ListValue, 'server', _('目标服务器'));
 		if (servers.length === 0) {
-			o.value('', _('未配置服务器 (请前往服务器信息标签页添加)'));
+			o.value('', _('未配置服务器 (请前往服务器维护标签页添加)'));
 		} else {
 			servers.forEach(function(srv) {
 				o.value(srv.name, srv.name);
