@@ -1,0 +1,20 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "Server Control"
+msgstr "服务器控制"
+
+msgid "Manual & Scheduled Control"
+msgstr "手动与定时控制"
+
+msgid "Server Information"
+msgstr "服务器信息"
+
+msgid "Manual Control"
+msgstr "手动控制"
+
+msgid "Scheduled Tasks"
+msgstr "定时任务"
+
+msgid "Select Server"
+msgstr "选择服务器"
