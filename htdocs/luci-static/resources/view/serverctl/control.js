@@ -4,7 +4,6 @@
 'require uci';
 'require rpc';
 'require ui';
-'require dom';
 
 var callAction = rpc.declare({
 	object: 'serverctl',
@@ -23,40 +22,40 @@ return view.extend({
 		var servers = uci.sections('serverctl', 'server');
 
 		var serverSelect = E('select', { 'class': 'cbi-input-select' }, [
-			E('option', { value: '' }, _('-- 请选择操作的服务器 --'))
+			E('option', { value: '' }, _('-- Please select a server --'))
 		]);
 
 		var serverInfo = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; display: none; justify-content: center;' }, [
 			E('div', { 'id': 'srv_info_display', 'style': 'padding: 10px; background: var(--background-alt); border-radius: 4px; text-align: center;' })
 		]);
 
-		// 【修复点 1】：将 option 的 value 改为真实的底层节点 ID：srv['.name']
 		servers.forEach(function(srv) {
-			serverSelect.appendChild(E('option', { value: srv['.name'] }, srv.name + ' (' + srv.ip + ')'));
+			var val = srv['.name'] || srv.name;
+			var label = (srv.name || srv['.name']) + (srv.ip ? ' (' + srv.ip + ')' : '');
+			serverSelect.appendChild(E('option', { value: val }, label));
 		});
 
 		var btnAction = function(action) {
 			return function(ev) {
-				var sid = serverSelect.value;
-				if (!sid) {
-					ui.addNotification(null, E('p', _('请先从下拉列表选择一台服务器。')), 'warning');
+				var sval = serverSelect.value;
+				if (!sval) {
+					ui.addNotification(null, E('p', _('Please select a server from the list first.')), 'warning');
 					return;
 				}
 				var btn = ev.target;
 				btn.disabled = true;
-				ui.showModal(_('正在执行'), [ E('p', { class: 'spinning' }, _('指令发送中，请稍候...')) ]);
+				ui.showModal(_('Executing'), [ E('p', { class: 'spinning' }, _('Sending command, please wait...')) ]);
 
-				// 这里传给后端的 sid 就是 cfg0xxxxx 这种节点 ID，后端脚本可以直接获取
-				callAction(sid, action).then(function(res) {
+				callAction(sval, action).then(function(res) {
 					ui.hideModal();
 					if (res && res.code === 0) {
 						ui.addNotification(null, E('p', res.msg), 'info');
 					} else {
-						ui.addNotification(null, E('p', (res && res.msg) ? res.msg : _('操作失败')), 'error');
+						ui.addNotification(null, E('p', (res && res.msg) ? res.msg : _('Operation failed')), 'error');
 					}
 				}).catch(function(e) {
 					ui.hideModal();
-					ui.addNotification(null, E('p', _('系统请求异常: ') + e.message), 'error');
+					ui.addNotification(null, E('p', _('System request error: ') + e.message), 'error');
 				}).finally(function() {
 					btn.disabled = false;
 				});
@@ -64,77 +63,74 @@ return view.extend({
 		};
 
 		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; text-align: center;' }, [
-			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping 测试')), ' ',
-			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH 测试')), ' ',
-			E('button', { 'class': 'btn cbi-button-apply', 'click': btnAction('wake') }, _('唤醒 (WOL)')), ' ',
-			E('button', { 'class': 'btn cbi-button-reset', 'click': btnAction('sleep') }, _('休眠')), ' ',
-			E('button', { 'class': 'btn cbi-button-negative', 'click': btnAction('poweroff') }, _('关机'))
+			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping Test')), ' ',
+			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH Test')), ' ',
+			E('button', { 'class': 'btn cbi-button-apply', 'click': btnAction('wake') }, _('Wake (WOL)')), ' ',
+			E('button', { 'class': 'btn cbi-button-reset', 'click': btnAction('sleep') }, _('Sleep')), ' ',
+			E('button', { 'class': 'btn cbi-button-negative', 'click': btnAction('poweroff') }, _('Power Off'))
 		]);
 
 		serverSelect.addEventListener('change', function(ev) {
-			var sid = ev.target.value;
-			if (!sid) {
+			var sval = ev.target.value;
+			if (!sval) {
 				serverInfo.style.display = 'none';
 				return;
 			}
-			// 【修复点 2】：依据节点 ID（x['.name']）进行筛选以显示对应信息
-			var s = servers.filter(function(x) { return x['.name'] === sid; })[0];
+			var s = servers.filter(function(x) { return x['.name'] === sval || x.name === sval; })[0];
 			if (s) {
 				document.getElementById('srv_info_display').innerHTML = 
-					'<strong>' + _('名称:') + '</strong> ' + s.name + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
-					'<strong>' + _('IP:') + '</strong> ' + s.ip + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
-					'<strong>' + _('MAC:') + '</strong> ' + s.mac + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
-					'<strong>' + _('用户:') + '</strong> ' + s.user;
+					'<strong>' + _('Name:') + '</strong> ' + (s.name || '-') + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+					'<strong>' + _('IP:') + '</strong> ' + (s.ip || '-') + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+					'<strong>' + _('MAC:') + '</strong> ' + (s.mac || '-') + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
+					'<strong>' + _('User:') + '</strong> ' + (s.user || '-');
 				serverInfo.style.display = 'block';
 			}
 		});
 
 		var manualControlDom = E('fieldset', { 'class': 'cbi-section' }, [
-			E('legend', _('手动控制')),
+			E('legend', _('Manual Control')),
 			E('div', { 'class': 'cbi-value', 'style': 'text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px;' }, [
-				E('span', { 'style': 'font-weight: 500;' }, _('选择服务器')),
+				E('span', { 'style': 'font-weight: 500;' }, _('Select Server')),
 				serverSelect
 			]),
 			serverInfo,
 			actionButtons
 		]);
 
-		// 定时任务区
 		m = new form.Map('serverctl');
 
-		s = m.section(form.GridSection, 'task', _('定时任务区'));
+		s = m.section(form.GridSection, 'task', _('Scheduled Tasks Section'));
 		s.addremove = true;
 		s.anonymous = true;
-		s.modaltitle = function(section_id) { return _('编辑定时任务'); };
+		s.modaltitle = function(section_id) { return _('Edit Scheduled Task'); };
 
-		o = s.option(form.Flag, 'enabled', _('启用'));
+		o = s.option(form.Flag, 'enabled', _('Enable'));
 		o.rmempty = false;
 		o.default = '1';
 
-		o = s.option(form.ListValue, 'server', _('目标服务器'));
+		o = s.option(form.ListValue, 'server', _('Target Server'));
 		if (servers.length === 0) {
-			o.value('', _('未配置服务器 (请前往服务器信息标签页添加)'));
+			o.value('', _('No server configured (Please add in Server Information tab)'));
 		} else {
 			servers.forEach(function(srv) {
-				// 【修复点 3】：让定时任务底层也保存节点 ID
-				o.value(srv['.name'], srv.name);
+				o.value(srv['.name'] || srv.name, srv.name || srv['.name']);
 			});
 		}
 		o.rmempty = false;
 
-		o = s.option(form.ListValue, 'action', _('执行动作'));
-		o.value('wake', _('唤醒 (WOL)'));
-		o.value('sleep', _('休眠'));
-		o.value('poweroff', _('关机'));
+		o = s.option(form.ListValue, 'action', _('Action'));
+		o.value('wake', _('Wake (WOL)'));
+		o.value('sleep', _('Sleep'));
+		o.value('poweroff', _('Power Off'));
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'hour', _('小时'));
+		o = s.option(form.Value, 'hour', _('Hour'));
 		o.datatype = 'range(0,23)';
 		o.default = '8';
 		o.rmempty = false;
 		o.description = _('0 - 23');
 
-		o = s.option(form.Value, 'min', _('分钟'));
+		o = s.option(form.Value, 'min', _('Minute'));
 		o.datatype = 'range(0,59)';
 		o.default = '30';
 		o.rmempty = false;
@@ -142,8 +138,8 @@ return view.extend({
 
 		return m.render().then(function(mapNode) {
 			return E('div', [
-				E('h2', { 'class': 'cbi-map-title' }, _('手动控制')),
-				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内的计算机、服务器等设备，或设立无人值守定时唤醒及关机策略。')),
+				E('h2', { 'class': 'cbi-map-title' }, _('Manual Control')),
+				E('div', { 'class': 'cbi-map-descr' }, _('Instantly control computers, servers and other devices in the LAN, or set unattended scheduled wake and shutdown strategies.')),
 				manualControlDom,
 				mapNode
 			]);
