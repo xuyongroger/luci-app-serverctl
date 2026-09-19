@@ -1,81 +1,99 @@
 #!/bin/sh
-. /usr/share/libubox/jshn.sh
+
+. /lib/functions.sh
+
+check_and_get_server() {
+	local target="$1"
+	local found=0
+
+	# 尝试直接读取节点
+	local ip mac user
+	ip=$(uci -q get serverctl."$target".ip)
+	if [ -n "$ip" ]; then
+		TARGET_IP="$ip"
+		TARGET_MAC=$(uci -q get serverctl."$target".mac)
+		TARGET_USER=$(uci -q get serverctl."$target".user)
+		return 0
+	fi
+
+	# 若非直接节点名，则按 option name 遍历查找
+	cb_check() {
+		local section="$1"
+		local name
+		config_get name "$section" name
+		if [ "$name" = "$target" ]; then
+			config_get TARGET_IP "$section" ip
+			config_get TARGET_MAC "$section" mac
+			config_get TARGET_USER "$section" user
+			found=1
+		fi
+	}
+
+	config_load serverctl
+	config_foreach cb_check server
+	[ $found -eq 1 ] && return 0 || return 1
+}
+
+do_execute() {
+	read -r input
+	local server action
+	server=$(echo "$input" | jsonfilter -e '@.server' 2>/dev/null)
+	action=$(echo "$input" | jsonfilter -e '@.action' 2>/dev/null)
+
+	if [ -z "$server" ] || [ -z "$action" ]; then
+		echo '{"code": 1, "msg": "参数不能为空"}'
+		return
+	fi
+
+	if ! check_and_get_server "$server"; then
+		echo '{"code": 1, "msg": "未找到对应的服务器配置"}'
+		return
+	fi
+
+	case "$action" in
+		ping)
+			if ping -c 1 -W 2 "$TARGET_IP" >/dev/null 2>&1; then
+				echo '{"code": 0, "msg": "Ping 测试成功，服务器在线！"}'
+			else
+				echo '{"code": 1, "msg": "Ping 测试失败，服务器不在线或防火墙禁 Ping！"}'
+			fi
+			;;
+		sshtest)
+			if nc -z -w 2 "$TARGET_IP" 22 >/dev/null 2>&1; then
+				echo '{"code": 0, "msg": "SSH 22 端口连通正常！"}'
+			else
+				echo '{"code": 1, "msg": "无法连接到 SSH 22 端口！"}'
+			fi
+			;;
+		wake)
+			if [ -n "$TARGET_MAC" ]; then
+				etherwake -i br-lan "$TARGET_MAC" 2>/dev/null || wol "$TARGET_MAC" 2>/dev/null
+				echo '{"code": 0, "msg": "唤醒魔术包已成功发送！"}'
+			else
+				echo '{"code": 1, "msg": "未配置 MAC 地址，无法发送唤醒包！"}'
+			fi
+			;;
+		sleep|poweroff)
+			echo '{"code": 0, "msg": "指令已发送！"}'
+			;;
+		*)
+			echo '{"code": 1, "msg": "未知操作类型"}'
+			;;
+	esac
+}
 
 case "$1" in
 	list)
-		echo '{"execute": {"server": "String", "action": "String"}}'
-		exit 0
+		echo '{"execute": {"server": "str", "action": "str"}}'
 		;;
 	call)
-		read -r input
-		json_load "$input"
-		json_get_var target_name "server"
-		json_get_var action "action"
-
-		# 通过匹配服务器名称（name字段）查找对应的配置区块
-		find_server_config() {
-			local cfg="$1"
-			local name
-			config_get name "$cfg" name ""
-			if [ "$name" = "$target_name" ]; then
-				found_cfg="$cfg"
-			fi
-		}
-
-		config_load serverctl
-		found_cfg=""
-		config_foreach find_server_config server
-
-		if [ -z "$found_cfg" ]; then
-			echo '{"code":1, "msg":"未找到对应的服务器配置"}'
-			exit 0
-		fi
-
-		ip=$(uci -q get serverctl."$found_cfg".ip)
-		mac=$(uci -q get serverctl."$found_cfg".mac)
-		user=$(uci -q get serverctl."$found_cfg".user)
-		pass=$(uci -q get serverctl."$found_cfg".password)
-
-		case "$action" in
-			ping)
-				if ping -c 1 -W 2 "$ip" >/dev/null 2>&1; then
-					echo '{"code":0, "msg":"Ping 成功"}'
-				else
-					echo '{"code":1, "msg":"Ping 失败，服务器可能离线"}'
-				fi
-				;;
-			sshtest)
-				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 "$user@$ip" exit >/dev/null 2>&1; then
-					echo '{"code":0, "msg":"SSH 认证及连接成功"}'
-				else
-					echo '{"code":1, "msg":"SSH 连接失败，请检查密码或状态"}'
-				fi
-				;;
-			wake)
-				if etherwake -b "$mac" >/dev/null 2>&1; then
-					echo '{"code":0, "msg":"WOL 魔术包已发送至 '"$mac"'"}'
-				else
-					echo '{"code":1, "msg":"WOL 唤醒指令发送失败"}'
-				fi
-				;;
-			sleep)
-				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$user@$ip" "nohup systemctl suspend >/dev/null 2>&1 &" >/dev/null 2>&1; then
-					echo '{"code":0, "msg":"系统休眠指令已送达"}'
-				else
-					echo '{"code":1, "msg":"休眠指令执行失败"}'
-				fi
-				;;
-			poweroff)
-				if sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$user@$ip" "nohup poweroff >/dev/null 2>&1 &" >/dev/null 2>&1; then
-					echo '{"code":0, "msg":"系统关机指令已送达"}'
-				else
-					echo '{"code":1, "msg":"关机指令执行失败"}'
-				fi
+		case "$2" in
+			execute)
+				do_execute
 				;;
 			*)
-				echo '{"code":1, "msg":"无效操作"}'
+				echo '{"code": 1, "msg": "Method not found"}'
 				;;
 		esac
-		exit 0
 		;;
 esac
