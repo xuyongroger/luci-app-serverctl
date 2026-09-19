@@ -34,7 +34,7 @@ check_and_get_server() {
 	[ $found -eq 1 ] && return 0 || return 1
 }
 
-# 原生 ssh 连通性测试（兼容 OpenWrt 无 nc/timeout 环境）
+# 使用原生 ssh 命令进行端口连通性检测（不依赖 nc 和 timeout）
 test_ssh_port() {
 	local ip="$1"
 	local res
@@ -64,7 +64,7 @@ do_execute() {
 		return
 	fi
 
-	# 提炼公共 SSH 选项，提高代码可读性与健壮性
+	# 提炼通用 SSH 极速参数
 	local ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=3 -o BatchMode=no"
 
 	case "$action" in
