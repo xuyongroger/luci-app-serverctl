@@ -22,7 +22,7 @@ return view.extend({
 		var m, s, o;
 		var servers = uci.sections('serverctl', 'server');
 
-		// 手动控制区
+		// 手动控制区：使用 inline-flex 配合 gap 紧凑挨在一起，并整体居中
 		var serverSelect = E('select', { 'class': 'cbi-input-select' }, [
 			E('option', { value: '' }, _('-- 请选择操作的服务器 --'))
 		]);
@@ -62,7 +62,7 @@ return view.extend({
 			};
 		};
 
-		// 按钮容器改为居中对齐 (text-align: center;)
+		// 按钮容器居中对齐
 		var actionButtons = E('div', { 'class': 'cbi-value', 'style': 'margin-top: 15px; text-align: center;' }, [
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('ping') }, _('Ping 测试')), ' ',
 			E('button', { 'class': 'btn cbi-button-action', 'click': btnAction('sshtest') }, _('SSH 测试')), ' ',
@@ -88,12 +88,12 @@ return view.extend({
 			}
 		});
 
-		// “选择服务器”及下拉列表行改为居中对齐
+		// 核心改动：legend 改为“手动控制”，并用 gap: 10px 让文字与下拉框紧挨在一起居中
 		var manualControlDom = E('fieldset', { 'class': 'cbi-section' }, [
 			E('legend', _('手动控制')),
-			E('div', { 'class': 'cbi-value', 'style': 'text-align: center; display: block;' }, [
-				E('label', { 'class': 'cbi-value-title', 'style': 'display: inline-block; margin-right: 10px;' }, _('选择服务器')),
-				E('div', { 'class': 'cbi-value-field', 'style': 'display: inline-block;' }, [ serverSelect ])
+			E('div', { 'class': 'cbi-value', 'style': 'text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px;' }, [
+				E('span', { 'style': 'font-weight: 500;' }, _('选择服务器')),
+				serverSelect
 			]),
 			serverInfo,
 			actionButtons
