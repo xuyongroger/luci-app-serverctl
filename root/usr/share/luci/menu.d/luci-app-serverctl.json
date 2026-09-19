@@ -1,6 +1,6 @@
 {
 	"admin/services/serverctl": {
-		"title": "服务器控制",
+		"title": "Server Control",
 		"order": 90,
 		"action": {
 			"type": "firstchild"
@@ -10,7 +10,7 @@
 		}
 	},
 	"admin/services/serverctl/control": {
-		"title": "手动与定时控制",
+		"title": "Manual Control",
 		"order": 1,
 		"action": {
 			"type": "view",
@@ -18,7 +18,7 @@
 		}
 	},
 	"admin/services/serverctl/servers": {
-		"title": "服务器维护",
+		"title": "Server Information",
 		"order": 2,
 		"action": {
 			"type": "view",
