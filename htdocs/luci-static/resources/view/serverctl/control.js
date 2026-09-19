@@ -15,7 +15,6 @@ var callAction = rpc.declare({
 
 return view.extend({
 	load: function() {
-		// 提前读取配置文件，以便填充下拉列表
 		return uci.load('serverctl');
 	},
 
@@ -23,7 +22,7 @@ return view.extend({
 		var m, s, o;
 		var servers = uci.sections('serverctl', 'server');
 
-		// ========== 手动控制区 ==========
+		// 手动控制区
 		var serverSelect = E('select', { 'class': 'cbi-input-select' }, [
 			E('option', { value: '' }, _('-- 请选择操作的服务器 --'))
 		]);
@@ -33,13 +32,14 @@ return view.extend({
 		]);
 
 		servers.forEach(function(srv) {
-			serverSelect.appendChild(E('option', { value: srv['.name'] }, srv.name + ' (' + srv.ip + ')'));
+			// 下拉框的 value 和显示文本都直接使用用户设定的名称 srv.name
+			serverSelect.appendChild(E('option', { value: srv.name }, srv.name + ' (' + srv.ip + ')'));
 		});
 
 		var btnAction = function(action) {
 			return function(ev) {
-				var sid = serverSelect.value;
-				if (!sid) {
+				var sname = serverSelect.value;
+				if (!sname) {
 					ui.addNotification(null, E('p', _('请先从下拉列表选择一台服务器。')), 'warning');
 					return;
 				}
@@ -47,7 +47,7 @@ return view.extend({
 				btn.disabled = true;
 				ui.showModal(_('正在执行'), [ E('p', { class: 'spinning' }, _('指令发送中，请稍候...')) ]);
 
-				callAction(sid, action).then(function(res) {
+				callAction(sname, action).then(function(res) {
 					ui.hideModal();
 					if (res && res.code === 0) {
 						ui.addNotification(null, E('p', res.msg), 'info');
@@ -72,12 +72,12 @@ return view.extend({
 		]);
 
 		serverSelect.addEventListener('change', function(ev) {
-			var sid = ev.target.value;
-			if (!sid) {
+			var sname = ev.target.value;
+			if (!sname) {
 				serverInfo.style.display = 'none';
 				return;
 			}
-			var s = servers.filter(function(x) { return x['.name'] === sid; })[0];
+			var s = servers.filter(function(x) { return x.name === sname; })[0];
 			if (s) {
 				document.getElementById('srv_info_display').innerHTML = 
 					'<strong>' + _('名称:') + '</strong> ' + s.name + '&nbsp;&nbsp;|&nbsp;&nbsp;' +
@@ -98,7 +98,7 @@ return view.extend({
 			actionButtons
 		]);
 
-		// ========== 定时任务区 ==========
+		// 定时任务区
 		m = new form.Map('serverctl');
 
 		s = m.section(form.GridSection, 'task', _('定时任务区'));
@@ -110,12 +110,13 @@ return view.extend({
 		o.rmempty = false;
 		o.default = '1';
 
+		// 定时任务的下拉列表同样绑定服务器的名称（srv.name）
 		o = s.option(form.ListValue, 'server', _('目标服务器'));
 		if (servers.length === 0) {
-			o.value('', _('未配置服务器 (请前往选项卡2添加)'));
+			o.value('', _('未配置服务器 (请前往服务器信息标签页添加)'));
 		} else {
 			servers.forEach(function(srv) {
-				o.value(srv['.name'], srv.name);
+				o.value(srv.name, srv.name);
 			});
 		}
 		o.rmempty = false;
@@ -140,7 +141,7 @@ return view.extend({
 
 		return m.render().then(function(mapNode) {
 			return E('div', [
-				E('h2', { 'class': 'cbi-map-title' }, _('手动控制与定时任务')),
+				E('h2', { 'class': 'cbi-map-title' }, _('手动与定时控制')),
 				E('div', { 'class': 'cbi-map-descr' }, _('即时控制局域网内挂载 Ubuntu26.04 的软路由及设备，或设立无人值守定时唤醒及关机策略。')),
 				manualControlDom,
 				mapNode
