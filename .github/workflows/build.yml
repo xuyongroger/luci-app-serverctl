@@ -117,8 +117,8 @@ jobs:
         run: |
           set -e
           export FORCE_UNSAFE_CONFIGURE=1
-          # ✅ 关键修复：defconfig 也要单线程详细输出，并先清理中间文件
-          make dirclean
+          # ✅ 关键修复：仅清理编译产物，不清理宿主工具
+          make clean
           make defconfig -j1 V=s
           make package/${PACKAGE_NAME}/compile V=s -j1 2>&1 | tee build.log
           echo "=== Build complete ==="
@@ -143,8 +143,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-log
-          path: /home/runner/work/openwrt-sdk/build.log
-          retention-days: 7
+        path: /home/runner/work/openwrt-sdk/build.log
+        retention-days: 7
 
   release:
     name: Create Release
