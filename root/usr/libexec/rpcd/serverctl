@@ -6,7 +6,8 @@ check_and_get_server() {
 	local target="$1"
 	local found=0
 
-	local ip mac user pass
+	# 1. 优先作为 UCI Section ID 查找
+	local ip mac user pass name
 	ip=$(uci -q get serverctl."$target".ip)
 	if [ -n "$ip" ]; then
 		TARGET_IP="$ip"
@@ -16,11 +17,12 @@ check_and_get_server() {
 		return 0
 	fi
 
+	# 2. 若不是 Section ID，按别名 name 遍历查找
 	cb_check() {
 		local section="$1"
-		local name
-		config_get name "$section" name
-		if [ "$name" = "$target" ]; then
+		local s_name
+		config_get s_name "$section" name
+		if [ "$s_name" = "$target" ] || [ "$section" = "$target" ]; then
 			config_get TARGET_IP "$section" ip
 			config_get TARGET_MAC "$section" mac
 			config_get TARGET_USER "$section" user
@@ -34,17 +36,18 @@ check_and_get_server() {
 	[ $found -eq 1 ] && return 0 || return 1
 }
 
-# 使用原生 ssh 命令检测端口连通性（不依赖 nc 和 timeout）
+# 解决问题 2：精确检测 SSH 22 端口连通性
 test_ssh_port() {
 	local ip="$1"
-	local res
-	res=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 "$ip" "exit" 2>&1)
-	
-	echo "$res" | grep -qE "Connection refused|Connection timed out|Network is unreachable"
-	if [ $? -eq 0 ]; then
-		return 1
+	# 使用 nc 简易探测或 ssh ConnectTimeout 检查退出码
+	if command -v nc >/dev/null 2>&1; then
+		nc -z -w 2 "$ip" 22 >/dev/null 2>&1
+		return $?
 	else
-		return 0
+		ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 -o BatchMode=yes "${ip}" "exit" >/dev/null 2>&1
+		local ret=$?
+		# 255 表示连接建立失败 (Refused / Timeout)
+		[ $ret -eq 255 ] && return 1 || return 0
 	fi
 }
 
@@ -59,12 +62,12 @@ do_execute() {
 		return
 	fi
 
+	# 解决问题 6：确保多服务器配置能被准确匹配
 	if ! check_and_get_server "$server"; then
 		echo '{"code": 1, "msg": "未找到对应的服务器配置"}'
 		return
 	fi
 
-	# 提炼通用 SSH 极速与稳定参数（同步等待发送完毕，不使用后台 & 异步）
 	local ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=3 -o BatchMode=no"
 
 	case "$action" in
@@ -76,23 +79,27 @@ do_execute() {
 			fi
 			;;
 		sshtest)
+			# 修复 SSH 测试逻辑
 			if test_ssh_port "$TARGET_IP"; then
 				echo '{"code": 0, "msg": "SSH 22 端口连通正常！"}'
 			else
-				echo '{"code": 1, "msg": "无法连接到 SSH 22 端口，请检查服务器 SSH 服务或防火墙！"}'
+				echo '{"code": 1, "msg": "无法连接到 SSH 22 端口，服务器可能未开机或端口封闭！"}'
 			fi
 			;;
 		wake)
+			# 解决问题 3：强化 WOL 唤醒，指定UDP 9端口与全网段广播
 			if [ -n "$TARGET_MAC" ]; then
-				etherwake -i br-lan "$TARGET_MAC" 2>/dev/null || wol "$TARGET_MAC" 2>/dev/null
-				echo '{"code": 0, "msg": "唤醒魔术包已成功发送！"}'
+				wol -i 255.255.255.255 -p 9 "$TARGET_MAC" >/dev/null 2>&1 || \
+				etherwake -D -i br-lan "$TARGET_MAC" >/dev/null 2>&1 || \
+				etherwake -D "$TARGET_MAC" >/dev/null 2>&1
+				echo '{"code": 0, "msg": "唤醒魔术包 (UDP 9) 已成功发送！"}'
 			else
 				echo '{"code": 1, "msg": "未配置 MAC 地址，无法发送唤醒包！"}'
 			fi
 			;;
 		sleep)
-			# 针对 Ubuntu s2idle 状态使用 -i (--ignore-inhibitors) 忽略 SSH 会话锁强行挂起
-			local cmd="systemctl suspend -i"
+			# 解决问题 4：显式调用 sudo/systemctl 挂起指令
+			local cmd="sudo systemctl suspend -i || systemctl suspend -i"
 			if [ -n "$TARGET_PASS" ] && command -v sshpass >/dev/null 2>&1; then
 				sshpass -p "$TARGET_PASS" ssh $ssh_opts "${TARGET_USER}@${TARGET_IP}" "$cmd" >/dev/null 2>&1
 			else
@@ -101,13 +108,14 @@ do_execute() {
 			echo '{"code": 0, "msg": "休眠/挂起指令已成功发送！"}'
 			;;
 		poweroff)
-			local cmd="poweroff"
+			# 解决问题 5：明确关机指令，防止误触发 suspend
+			local cmd="sudo poweroff || sudo systemctl poweroff || poweroff"
 			if [ -n "$TARGET_PASS" ] && command -v sshpass >/dev/null 2>&1; then
 				sshpass -p "$TARGET_PASS" ssh $ssh_opts "${TARGET_USER}@${TARGET_IP}" "$cmd" >/dev/null 2>&1
 			else
 				ssh $ssh_opts "${TARGET_USER}@${TARGET_IP}" "$cmd" >/dev/null 2>&1
 			fi
-			echo '{"code": 0, "msg": "关机指令已成功发送！"}'
+			echo '{"code": 0, "msg": "关机指令已发送！"}'
 			;;
 		*)
 			echo '{"code": 1, "msg": "未知操作类型"}'
