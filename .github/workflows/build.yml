@@ -18,7 +18,8 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ env.TARGET_ARCH }}
+    # ✅ 修复：Job name 不支持 env 上下文，直接使用架构名称
+    name: Build x86_64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -43,6 +44,7 @@ jobs:
           set -e
           SDK_URL="https://downloads.immortalwrt.org/releases/${SDK_VERSION}/targets/x86/64/"
           SDK_FILE=$(curl -sL "$SDK_URL" \
+
             | grep -oP '(?<=href=")[^"]*sdk[^"]*\.tar\.zst' \
             | head -n 1)
           if [ -z "$SDK_FILE" ]; then
