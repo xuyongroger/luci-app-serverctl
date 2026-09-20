@@ -4,11 +4,12 @@ PKG_NAME:=luci-app-serverctl
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
-LUCI_TITLE:=LuCI support for Server Control (WOL/Sleep/Poweroff)
-LUCI_DEPENDS:=+sshpass +etherwake
-PKGARCH:=all
+LUCI_TITLE:=LuCI support for Server Power Control
+LUCI_PKGARCH:=all
+# 严格声明编译与运行依赖：加入 lua, lucihttp 以及运行时需要的 wol, etherwake, sshpass
+LUCI_DEPENDS:=+luci-base +lua +luci-compat +lucihttp +wol +etherwake +sshpass
 
+# 引入官方 LuCI 编译打包规则
 include $(TOPDIR)/feeds/luci/luci.mk
 
-# 仅需声明主包，luci.mk 会自动扫描 po/ 目录生成对应的 i18n 语言包
-$(eval $(call BuildPackage,luci-app-serverctl))
+# call BuildPackage - OpenWrt buildroot signature
