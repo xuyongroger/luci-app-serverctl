@@ -24,14 +24,21 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # ✅ 修复：补充 libncurses-dev、flex、bison 等 scripts/config/conf 编译所需的依赖
+      # ✅ 修复：移除失效源，并安装正确的 Python 依赖包
       - name: Install host dependencies
         run: |
+          # 1. 移除可能导致 404 错误的 Google Chrome 软件源
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+
+          # 2. 更新软件包列表
           sudo apt-get update
+
+          # 3. 安装编译依赖
+          # 注意：在 Ubuntu 24.04 中，python3-distutils 已被 python3-lib2to3 替代
           sudo apt-get install -y --no-install-recommends \
             build-essential rsync unzip zstd coreutils cmake xxd file \
             libncurses-dev libncursesw5-dev flex bison gawk \
-            python3 python3-distutils python3-setuptools
+            python3 python3-lib2to3 libelf-dev
 
       - name: Cache ImmortalWrt SDK
         id: cache-sdk
@@ -104,7 +111,6 @@ jobs:
             ./scripts/feeds install -p action -f ${PACKAGE_NAME}
           fi
 
-      # ✅ 修复：改用单线程 -j1 编译，并设置 FORCE_UNSAFE_CONFIGURE=1
       - name: Build ipk package
         working-directory: /home/runner/work/openwrt-sdk
         run: |
