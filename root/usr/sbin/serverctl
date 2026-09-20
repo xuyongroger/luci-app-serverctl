@@ -1,0 +1,64 @@
+#!/bin/sh
+# serverctl - Server Control utility for LuCI
+# Usage: serverctl <action> <ip> <mac> <username> <password>
+# Actions: ping, ssh_test, wake, sleep, shutdown
+
+ACTION="$1"
+IP="$2"
+MAC="$3"
+USERNAME="$4"
+PASSWORD="$5"
+
+if [ -z "$ACTION" ] || [ -z "$IP" ]; then
+	echo "ERROR: Missing required parameters" >&2
+	exit 1
+fi
+
+case "$ACTION" in
+	ping)
+		ping -c 3 -W 2 "$IP" 2>&1
+		exit $?
+		;;
+	ssh_test)
+		if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+			echo "ERROR: Missing username or password" >&2
+			exit 1
+		fi
+		sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+			-o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null \
+			"$USERNAME@$IP" "echo SSH_OK" 2>&1
+		exit $?
+		;;
+	wake)
+		if [ -z "$MAC" ]; then
+			echo "ERROR: Missing MAC address" >&2
+			exit 1
+		fi
+		etherwake -i br-lan "$MAC" 2>&1
+		exit $?
+		;;
+	sleep)
+		if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+			echo "ERROR: Missing username or password" >&2
+			exit 1
+		fi
+		sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+			-o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null \
+			"$USERNAME@$IP" "systemctl suspend" 2>&1
+		exit $?
+		;;
+	shutdown)
+		if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+			echo "ERROR: Missing username or password" >&2
+			exit 1
+		fi
+		sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+			-o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null \
+			"$USERNAME@$IP" "systemctl poweroff" 2>&1
+		exit $?
+		;;
+	*)
+		echo "ERROR: Unknown action '$ACTION'" >&2
+		exit 1
+		;;
+esac
