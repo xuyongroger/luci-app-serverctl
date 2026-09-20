@@ -37,27 +37,25 @@ jobs:
           path: /home/runner/work/openwrt-sdk
           key: ${{ runner.os }}-immortalwrt-sdk-${{ env.SDK_VERSION }}-${{ env.TARGET_ARCH }}
 
+      # ✅ 修复：使用分号代替反斜杠换行，彻底解决 GitHub Actions 解析管道符报错的问题
       - name: Download & extract ImmortalWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          SDK_URL="https://downloads.immortalwrt.org/releases/${SDK_VERSION}/targets/x86/64/"
-          SDK_FILE=$(curl -sL "$SDK_URL" \
-
-            | grep 'href="[^"]*sdk[^"]*[.]tar[.]zst"' \
-            | head -n 1 \
-            | sed 's/href="//')
+        run: >
+          set -e;
+          SDK_URL="https://downloads.immortalwrt.org/releases/${SDK_VERSION}/targets/x86/64/";
+          SDK_FILE=$(curl -sL "$SDK_URL" | grep 'href="[^"]*sdk[^"]*[.]tar[.]zst"' | head -n 1 | sed 's/href="//');
           if [ -z "$SDK_FILE" ]; then
-            echo "::error::SDK file not found at $SDK_URL"
-            curl -sL "$SDK_URL" | grep 'href="[^"]*[.]tar[.]zst"' || true
-            exit 1
-          fi
-          echo "Downloading: ${SDK_URL}${SDK_FILE}"
-          wget -q "${SDK_URL}${SDK_FILE}"
-          mkdir -p /home/runner/work/openwrt-sdk
-          tar --use-compress-program=unzstd -xf "$SDK_FILE" -C /home/runner/work/openwrt-sdk --strip-components=1
+            echo "::error::SDK file not found at $SDK_URL";
+            curl -sL "$SDK_URL" | grep 'href="[^"]*[.]tar[.]zst"' || true;
+            exit 1;
+          fi;
+          echo "Downloading: ${SDK_URL}${SDK_FILE}";
+          wget -q "${SDK_URL}${SDK_FILE}";
+          mkdir -p /home/runner/work/openwrt-sdk;
+          tar --use-compress-program=unzstd -xf "$SDK_FILE" -C /home/runner/work/openwrt-sdk --strip-components=1;
           echo "SDK extracted successfully."
 
+      # ✅ 修复：将 sed 的 \n 换行拆分为两条独立命令，避免部分 sed 版本不兼容
       - name: Prepare build environment
         working-directory: /home/runner/work/openwrt-sdk
         run: |
@@ -94,6 +92,7 @@ jobs:
           fi
           echo "Version: ${NEW_VER}-r${NEW_REL}"
 
+      # ✅ 修复：将复杂的 || 和 && 链式逻辑改为 if 判断，防止 set -e 意外中断
       - name: Update feeds & install package
         working-directory: /home/runner/work/openwrt-sdk
         run: |
@@ -113,6 +112,7 @@ jobs:
           make package/${PACKAGE_NAME}/compile V=s -j"$(nproc)" 2>&1 | tee build.log
           echo "=== Build complete ==="
 
+      # ✅ 修复：find 命令增加 || true，防止没有 .ipk 文件时触发 set -e 报错
       - name: Collect artifacts
         working-directory: /home/runner/work/openwrt-sdk
         run: |
