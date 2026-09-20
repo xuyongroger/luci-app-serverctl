@@ -24,11 +24,14 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # ✅ 修复：补充 libncurses-dev、flex、bison 等 scripts/config/conf 编译所需的依赖
       - name: Install host dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential rsync unzip zstd coreutils cmake xxd file
+            build-essential rsync unzip zstd coreutils cmake xxd file \
+            libncurses-dev libncursesw5-dev flex bison gawk \
+            python3 python3-distutils python3-setuptools
 
       - name: Cache ImmortalWrt SDK
         id: cache-sdk
@@ -37,7 +40,6 @@ jobs:
           path: /home/runner/work/openwrt-sdk
           key: ${{ runner.os }}-immortalwrt-sdk-${{ env.SDK_VERSION }}-${{ env.TARGET_ARCH }}
 
-      # ✅ 修复：使用更精确的 sed 命令来提取文件名
       - name: Download & extract ImmortalWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: >
@@ -102,12 +104,14 @@ jobs:
             ./scripts/feeds install -p action -f ${PACKAGE_NAME}
           fi
 
+      # ✅ 修复：改用单线程 -j1 编译，并设置 FORCE_UNSAFE_CONFIGURE=1
       - name: Build ipk package
         working-directory: /home/runner/work/openwrt-sdk
         run: |
           set -e
+          export FORCE_UNSAFE_CONFIGURE=1
           make defconfig
-          make package/${PACKAGE_NAME}/compile V=s -j"$(nproc)" 2>&1 | tee build.log
+          make package/${PACKAGE_NAME}/compile V=s -j1 2>&1 | tee build.log
           echo "=== Build complete ==="
 
       - name: Collect artifacts
