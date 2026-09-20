@@ -1,28 +1,13 @@
 {
 	"admin/services/serverctl": {
 		"title": "Server Control",
-		"order": 90,
 		"action": {
-			"type": "firstchild"
+			"type": "view",
+			"path": "serverctl"
 		},
 		"depends": {
-			"acl": [ "luci-app-serverctl" ]
-		}
-	},
-	"admin/services/serverctl/control": {
-		"title": "手动/定时控制",
-		"order": 1,
-		"action": {
-			"type": "view",
-			"path": "serverctl/control"
-		}
-	},
-	"admin/services/serverctl/servers": {
-		"title": "服务器维护",
-		"order": 2,
-		"action": {
-			"type": "view",
-			"path": "serverctl/servers"
+			"acl": [ "luci-app-serverctl" ],
+			"uci": { "serverctl": true }
 		}
 	}
 }
