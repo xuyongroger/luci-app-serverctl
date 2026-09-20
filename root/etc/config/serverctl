@@ -1,4 +1,0 @@
-config serverctl 'general'
-
-# 服务器信息将会在这里以 config server 块保存
-# 定时任务将会在这里以 config task 块保存
