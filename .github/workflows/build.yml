@@ -24,31 +24,32 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # ✅ 修复：移除失效源，并安装正确的 Python 依赖包
+      # ✅ 修复：安装完整的 ImmortalWrt 编译依赖
       - name: Install host dependencies
         run: |
-          # 1. 移除可能导致 404 错误的 Google Chrome 软件源
+          # 移除可能干扰的第三方源
           sudo rm -f /etc/apt/sources.list.d/google-chrome.list
-
-          # 2. 更新软件包列表
+          
           sudo apt-get update
-
-          # 3. 安装编译依赖
-          # 注意：在 Ubuntu 24.04 中，python3-distutils 已被 python3-lib2to3 替代
           sudo apt-get install -y --no-install-recommends \
-            build-essential rsync unzip zstd coreutils cmake xxd file \
-            libncurses-dev libncursesw5-dev flex bison gawk \
-            python3 python3-lib2to3 libelf-dev
+            build-essential ccache ecj fastjar file g++ gawk gettext git \
+            libelf-dev libncurses5-dev libncursesw5-dev libssl-dev \
+            python3 python3-lib2to3 python3-setuptools python3-dev \
+            rsync subversion swig unzip wget cmake curl asciidoc \
+            autoconf automake autopoint binutils bison bzip2 cpio \
+            device-tree-compiler flex gcc-multilib g++-multilib gperf \
+            haveged help2man intltool libc6-dev-i386 libglib2.0-dev \
+            libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libreadline-dev \
+            libtool lrzsz mkisofs nano ninja-build p7zip p7zip-full patch \
+            pkgconf python3-pyelftools libpython3-dev scons squashfs-tools \
+            upx-ucl xxd zlib1g-dev bc time coreutils xz-utils zstd
 
-      - name: Cache ImmortalWrt SDK
-        id: cache-sdk
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/work/openwrt-sdk
-          key: ${{ runner.os }}-immortalwrt-sdk-${{ env.SDK_VERSION }}-${{ env.TARGET_ARCH }}
+      # ✅ 修复：清除旧的 SDK 缓存，强制重新下载
+      - name: Clear SDK cache
+        run: |
+          rm -rf /home/runner/work/openwrt-sdk
 
       - name: Download & extract ImmortalWrt SDK
-        if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: >
           set -e;
           SDK_URL="https://downloads.immortalwrt.org/releases/${SDK_VERSION}/targets/x86/64/";
@@ -111,6 +112,7 @@ jobs:
             ./scripts/feeds install -p action -f ${PACKAGE_NAME}
           fi
 
+      # ✅ 修复：单线程编译 + 详细日志 + FORCE_UNSAFE_CONFIGURE
       - name: Build ipk package
         working-directory: /home/runner/work/openwrt-sdk
         run: |
