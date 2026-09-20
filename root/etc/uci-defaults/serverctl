@@ -1,0 +1,6 @@
+#!/bin/sh
+# UCI default for serverctl
+
+uci set serverctl.global=global
+uci set serverctl.global.enabled=1
+uci commit serverctl
