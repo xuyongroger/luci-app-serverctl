@@ -38,7 +38,7 @@ jobs:
           path: /home/runner/work/openwrt-sdk
           key: ${{ runner.os }}-immortalwrt-sdk-${{ env.SDK_VERSION }}-${{ env.TARGET_ARCH }}
 
-      # ✅ 修复：替换了 grep -P 为 grep -E，解决语法错误
+      # ✅ 修复：替换了 grep -E 为 grep -o，解决语法错误
       - name: Download & extract ImmortalWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
@@ -46,12 +46,12 @@ jobs:
           SDK_URL="https://downloads.immortalwrt.org/releases/${SDK_VERSION}/targets/x86/64/"
           SDK_FILE=$(curl -sL "$SDK_URL" \
 
-            | grep -oE 'href="[^"]*sdk[^"]*\.tar\.zst"' \
+            | grep -o 'href="[^"]*sdk[^"]*\.tar\.zst"' \
             | head -n 1 \
             | sed 's/href="//')
           if [ -z "$SDK_FILE" ]; then
             echo "::error::SDK file not found at $SDK_URL"
-            curl -sL "$SDK_URL" | grep -oE 'href="[^"]*\.tar\.zst"' || true
+            curl -sL "$SDK_URL" | grep -o 'href="[^"]*\.tar\.zst"' || true
             exit 1
           fi
           echo "Downloading: ${SDK_URL}${SDK_FILE}"
