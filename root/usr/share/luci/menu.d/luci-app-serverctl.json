@@ -10,7 +10,7 @@
 		}
 	},
 	"admin/services/serverctl/control": {
-		"title": "Manual Control",
+		"title": "手动/定时控制",
 		"order": 1,
 		"action": {
 			"type": "view",
@@ -18,7 +18,7 @@
 		}
 	},
 	"admin/services/serverctl/servers": {
-		"title": "Server Information",
+		"title": "服务器维护",
 		"order": 2,
 		"action": {
 			"type": "view",
