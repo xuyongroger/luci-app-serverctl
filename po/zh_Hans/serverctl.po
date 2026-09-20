@@ -1,116 +1,163 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: luci-app-serverctl\n"
-"POT-Creation-Date: 2026-09-19 12:00+0800\n"
-"PO-Revision-Date: 2026-09-19 12:00+0800\n"
-"Last-Translator: Auto\n"
-"Language-Team: Chinese\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: admin <admin@example.com>\n"
+"Language-Team: Chinese (Simplified Han script)\n"
 "Language: zh_Hans\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
+#: htdocs/luci-static/resources/view/serverctl.js
 msgid "Server Control"
 msgstr "服务器控制"
 
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Manage LAN servers: Wake-on-LAN, SSH control, and scheduled tasks."
+msgstr "管理局域网服务器：网络唤醒、SSH 控制和定时任务。"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Manual/Scheduled Control"
+msgstr "手动/定时控制"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Server Maintenance"
+msgstr "服务器维护"
+
+#: htdocs/luci-static/resources/view/serverctl.js
 msgid "Manual Control"
 msgstr "手动控制"
 
-msgid "Server Information"
-msgstr "服务器信息"
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "No servers configured. Please add servers in the \"Server Maintenance\" tab."
+msgstr "未配置服务器。请在「服务器维护」选项卡中添加服务器。"
 
-msgid "Instantly control computers, servers and other devices in the LAN, or set unattended scheduled wake and shutdown strategies."
-msgstr "即时控制局域网内的计算机、服务器等设备，或设立无人值守定时唤醒及关机策略。"
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Server"
+msgstr "服务器"
 
-msgid "Maintain and manage your LAN server list here. After saving, it can be selected in the control panel dropdown and scheduled task modals."
-msgstr "在此处维护和管理您的局域网服务器清单。保存后即可在控制面板的下拉列表和定时任务弹窗中选用。"
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Name"
+msgstr "名称"
 
-msgid "-- Please select a server --"
-msgstr "-- 请选择操作的服务器 --"
-
-msgid "Select Server"
-msgstr "选择服务器"
-
-msgid "Ping Test"
-msgstr "Ping 测试"
-
-msgid "SSH Test"
-msgstr "SSH 测试"
-
-msgid "Wake (WOL)"
-msgstr "唤醒 (WOL)"
-
-msgid "Sleep"
-msgstr "休眠"
-
-msgid "Power Off"
-msgstr "关机"
-
-msgid "Name:"
-msgstr "名称:"
-
-msgid "IP:"
-msgstr "IP:"
-
-msgid "MAC:"
-msgstr "MAC:"
-
-msgid "User:"
-msgstr "用户:"
-
-msgid "Scheduled Tasks Section"
-msgstr "定时任务区"
-
-msgid "Edit Scheduled Task"
-msgstr "编辑定时任务"
-
-msgid "Enable"
-msgstr "启用"
-
-msgid "Target Server"
-msgstr "目标服务器"
-
-msgid "No server configured (Please add in Server Information tab)"
-msgstr "未配置服务器 (请前往服务器信息标签页添加)"
-
-msgid "Action"
-msgstr "执行动作"
-
-msgid "Hour"
-msgstr "小时"
-
-msgid "Minute"
-msgstr "分钟"
-
-msgid "Please select a server from the list first."
-msgstr "请先从下拉列表选择一台服务器。"
-
-msgid "Executing"
-msgstr "正在执行"
-
-msgid "Sending command, please wait..."
-msgstr "指令发送中，请稍候..."
-
-msgid "Operation failed"
-msgstr "操作失败"
-
-msgid "System request error: "
-msgstr "系统请求异常: "
-
-msgid "Server List"
-msgstr "服务器列表"
-
-msgid "Server Alias"
-msgstr "服务器别名"
-
+#: htdocs/luci-static/resources/view/serverctl.js
 msgid "IP Address"
 msgstr "IP 地址"
 
+#: htdocs/luci-static/resources/view/serverctl.js
 msgid "MAC Address"
 msgstr "MAC 地址"
 
-msgid "SSH Username"
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Username"
+msgstr "用户名"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Password"
+msgstr "密码"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Ping Test"
+msgstr "Ping 测试"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "SSH Test"
+msgstr "SSH 测试"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Wake"
+msgstr "唤醒"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Sleep"
+msgstr "休眠"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Shutdown"
+msgstr "关机"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Are you sure you want to suspend this server?"
+msgstr "确定要休眠此服务器吗？"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Are you sure you want to shut down this server?"
+msgstr "确定要关闭此服务器吗？"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "succeeded."
+msgstr "成功。"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "failed:"
+msgstr "失败："
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Scheduled Tasks"
+msgstr "定时任务"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Configure scheduled wake/sleep/shutdown tasks."
+msgstr "配置定时唤醒 / 休眠 / 关机任务。"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Action"
+msgstr "操作"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Day"
+msgstr "日期"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Cron day: 1-7 (1=Monday), ranges like 1-5, or * for daily"
+msgstr "Cron 日期：1-7（1=周一），范围如 1-5，或 * 表示每天"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Hour"
+msgstr "小时"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "0-23, or * for every hour"
+msgstr "0-23，或 * 表示每小时"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Minute"
+msgstr "分钟"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "0-59, or * for every minute"
+msgstr "0-59，或 * 表示每分钟"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Server List"
+msgstr "服务器列表"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Manage the list of LAN servers."
+msgstr "管理局域网服务器列表。"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Server name/label"
+msgstr "服务器名称 / 标签"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Server IP address"
+msgstr "服务器 IP 地址"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "Server MAC address (for WOL)"
+msgstr "服务器 MAC 地址（用于 WOL 唤醒）"
+
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "SSH username"
 msgstr "SSH 用户名"
 
-msgid "SSH Password"
+#: htdocs/luci-static/resources/view/serverctl.js
+msgid "SSH password"
 msgstr "SSH 密码"
+
+#: root/usr/share/rpcd/acl.d/luci-app-serverctl.json:3
+msgid "Grant access to server control (WOL, SSH, ping)"
+msgstr "授予服务器控制（WOL、SSH、Ping）访问权限"
