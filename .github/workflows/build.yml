@@ -24,12 +24,9 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # ✅ 修复：安装完整的 ImmortalWrt 编译依赖
       - name: Install host dependencies
         run: |
-          # 移除可能干扰的第三方源
           sudo rm -f /etc/apt/sources.list.d/google-chrome.list
-          
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential ccache ecj fastjar file g++ gawk gettext git \
@@ -44,12 +41,15 @@ jobs:
             pkgconf python3-pyelftools libpython3-dev scons squashfs-tools \
             upx-ucl xxd zlib1g-dev bc time coreutils xz-utils zstd
 
-      # ✅ 修复：清除旧的 SDK 缓存，强制重新下载
-      - name: Clear SDK cache
-        run: |
-          rm -rf /home/runner/work/openwrt-sdk
+      - name: Cache ImmortalWrt SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/work/openwrt-sdk
+          key: ${{ runner.os }}-immortalwrt-sdk-${{ env.SDK_VERSION }}-${{ env.TARGET_ARCH }}
 
       - name: Download & extract ImmortalWrt SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: >
           set -e;
           SDK_URL="https://downloads.immortalwrt.org/releases/${SDK_VERSION}/targets/x86/64/";
@@ -112,13 +112,14 @@ jobs:
             ./scripts/feeds install -p action -f ${PACKAGE_NAME}
           fi
 
-      # ✅ 修复：单线程编译 + 详细日志 + FORCE_UNSAFE_CONFIGURE
       - name: Build ipk package
         working-directory: /home/runner/work/openwrt-sdk
         run: |
           set -e
           export FORCE_UNSAFE_CONFIGURE=1
-          make defconfig
+          # ✅ 关键修复：defconfig 也要单线程详细输出，并先清理中间文件
+          make dirclean
+          make defconfig -j1 V=s
           make package/${PACKAGE_NAME}/compile V=s -j1 2>&1 | tee build.log
           echo "=== Build complete ==="
 
@@ -145,7 +146,6 @@ jobs:
           path: /home/runner/work/openwrt-sdk/build.log
           retention-days: 7
 
-  # ===== Release on tag =====
   release:
     name: Create Release
     needs: build
