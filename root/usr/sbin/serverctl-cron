@@ -1,0 +1,72 @@
+#!/bin/sh
+# serverctl-cron - Check and execute scheduled server control tasks
+# Runs every minute via cron
+
+DAY=$(date +%u)   # 1-7 (Monday=1)
+HOUR=$(date +%H)
+MINUTE=$(date +%M)
+
+# 检查是否存在任务
+TASK_COUNT=$(uci get serverctl.@task 2>/dev/null | wc -l)
+[ "${TASK_COUNT:-0}" -eq 0 ] 2>/dev/null && exit 0
+
+# 遍历所有任务
+for i in $(seq 0 $((TASK_COUNT - 1))); do
+	TASK="serverctl.@task[$i]"
+
+	SERVER=$(uci get "$TASK.server" 2>/dev/null)
+	ACTION=$(uci get "$TASK.action" 2>/dev/null)
+	DAY_CRON=$(uci get "$TASK.day" 2>/dev/null)
+	HOUR_CRON=$(uci get "$TASK.hour" 2>/dev/null)
+	MINUTE_CRON=$(uci get "$TASK.minute" 2>/dev/null)
+
+	[ -z "$SERVER" ] && continue
+	[ -z "$ACTION" ] && continue
+
+	# --- 日期匹配 ---
+	DAY_MATCH=0
+	if [ "$DAY_CRON" = "*" ]; then
+		DAY_MATCH=1
+	else
+		for D in $(echo "$DAY_CRON" | tr ',' ' '); do
+			if [ "$D" = "$DAY" ]; then
+				DAY_MATCH=1
+				break
+			fi
+			RANGE_START=$(echo "$D" | cut -d'-' -f1)
+			RANGE_END=$(echo "$D" | cut -d'-' -f2)
+			if [ -n "$RANGE_END" ] && [ "$DAY" -ge "$RANGE_START" ] 2>/dev/null \
+			   && [ "$DAY" -le "$RANGE_END" ] 2>/dev/null; then
+				DAY_MATCH=1
+				break
+			fi
+		done
+	fi
+	[ "$DAY_MATCH" -eq 0 ] && continue
+
+	# --- 小时匹配 ---
+	HOUR_MATCH=0
+	if [ "$HOUR_CRON" = "*" ] || [ "$HOUR_CRON" = "$HOUR" ]; then
+		HOUR_MATCH=1
+	fi
+	[ "$HOUR_MATCH" -eq 0 ] && continue
+
+	# --- 分钟匹配 ---
+	MINUTE_MATCH=0
+	if [ "$MINUTE_CRON" = "*" ] || [ "$MINUTE_CRON" = "$MINUTE" ]; then
+		MINUTE_MATCH=1
+	fi
+	[ "$MINUTE_MATCH" -eq 0 ] && continue
+
+	# --- 执行任务 ---
+	IP=$(uci get "serverctl.$SERVER.ip" 2>/dev/null)
+	MAC=$(uci get "serverctl.$SERVER.mac" 2>/dev/null)
+	USERNAME=$(uci get "serverctl.$SERVER.username" 2>/dev/null)
+	PASSWORD=$(uci get "serverctl.$SERVER.password" 2>/dev/null)
+
+	[ -z "$IP" ] && continue
+
+	/usr/sbin/serverctl "$ACTION" "$IP" "$MAC" "$USERNAME" "$PASSWORD" 2>&1 | logger -t serverctl
+done
+
+exit 0
