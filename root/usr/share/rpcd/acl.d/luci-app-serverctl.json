@@ -1,15 +1,14 @@
 {
 	"luci-app-serverctl": {
-		"description": "Grant access to Server Control",
+		"description": "Grant access to server control (WOL, SSH, ping)",
 		"read": {
 			"uci": [ "serverctl" ],
-			"ubus": { "serverctl": [ "execute" ] }
+			"file": {
+				"/usr/sbin/serverctl": [ "exec" ]
+			}
 		},
 		"write": {
-			"uci": [ "serverctl" ],
-			"file": {
-				"/etc/init.d/serverctl": [ "exec" ]
-			}
+			"uci": [ "serverctl" ]
 		}
 	}
 }
